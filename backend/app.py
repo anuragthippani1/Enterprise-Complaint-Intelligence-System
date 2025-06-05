@@ -15,6 +15,7 @@ from sklearn.linear_model import LogisticRegression
 import joblib
 from functools import wraps
 import numpy as np
+from bson.errors import InvalidId
 
 load_dotenv()
 
@@ -129,6 +130,7 @@ def create_complaint():
 
     result = complaints_collection.insert_one(complaint)
     complaint['_id'] = result.inserted_id
+    complaint['_id'] = str(complaint['_id'])  # Fix for ObjectId serialization
     return jsonify(complaint), 201
 
 # Get all complaints
@@ -140,6 +142,8 @@ def get_complaints():
     skip = (page - 1) * per_page
 
     complaints = list(complaints_collection.find().skip(skip).limit(per_page))
+    for c in complaints:
+        c['_id'] = str(c['_id'])
     total = complaints_collection.count_documents({})
     return jsonify({
         'complaints': complaints,
@@ -152,9 +156,15 @@ def get_complaints():
 @app.route('/api/complaints/<complaint_id>', methods=['GET'])
 @jwt_required()
 def get_complaint(complaint_id):
-    complaint = complaints_collection.find_one({'_id': ObjectId(complaint_id)})
+    try:
+        oid = ObjectId(complaint_id)
+    except InvalidId:
+        return jsonify({'message': 'Invalid complaint ID'}), 400
+
+    complaint = complaints_collection.find_one({'_id': oid})
     if not complaint:
         return jsonify({'message': 'Complaint not found'}), 404
+    complaint['_id'] = str(complaint['_id'])  # Fix for ObjectId serialization
     return jsonify(complaint)
 
 # Update complaint (admin only)

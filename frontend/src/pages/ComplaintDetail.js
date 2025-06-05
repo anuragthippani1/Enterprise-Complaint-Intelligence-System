@@ -11,8 +11,10 @@ import {
   Select,
   MenuItem,
   Alert,
+  TextField,
 } from "@mui/material";
 import { useAuth } from "../contexts/AuthContext";
+import api from "../api/axios";
 
 export const ComplaintDetail = () => {
   const { id } = useParams();
@@ -21,10 +23,14 @@ export const ComplaintDetail = () => {
   const [complaint, setComplaint] = useState(null);
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
+  const [text, setText] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const isNew = id === "new";
+
   useEffect(() => {
+    if (isNew) return;
     const fetchComplaint = async () => {
       try {
         const response = await fetch(`/api/complaints/${id}`, {
@@ -37,14 +43,28 @@ export const ComplaintDetail = () => {
         setComplaint(data);
         setCategory(data.category);
         setStatus(data.status);
+        setText(data.text);
       } catch (error) {
         setError("Error fetching complaint details");
         console.error("Error:", error);
       }
     };
-
     fetchComplaint();
-  }, [id, user.token]);
+  }, [id, user.token, isNew]);
+
+  const handleCreate = async () => {
+    try {
+      await api.post("/complaints", { text });
+      setSuccess("Complaint created successfully");
+      setTimeout(() => {
+        setSuccess("");
+        navigate("/complaints");
+      }, 1500);
+    } catch (error) {
+      setError(error.response?.data?.message || "Error creating complaint");
+      console.error("Error:", error);
+    }
+  };
 
   const handleUpdate = async () => {
     try {
@@ -69,6 +89,57 @@ export const ComplaintDetail = () => {
       console.error("Error:", error);
     }
   };
+
+  if (isNew) {
+    return (
+      <Box sx={{ maxWidth: 800, margin: "0 auto", padding: 3 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {success}
+          </Alert>
+        )}
+        <Card>
+          <CardContent>
+            <Typography variant="h5" gutterBottom>
+              New Complaint
+            </Typography>
+            <TextField
+              fullWidth
+              label="Complaint Text"
+              variant="outlined"
+              margin="normal"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              required
+              multiline
+              minRows={3}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCreate}
+              sx={{ mt: 2 }}
+              disabled={!text.trim()}
+            >
+              Submit Complaint
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => navigate("/complaints")}
+              sx={{ mt: 2, ml: 2 }}
+            >
+              Back to List
+            </Button>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
 
   if (!complaint) {
     return <Typography>Loading...</Typography>;
