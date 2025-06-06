@@ -10,10 +10,16 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Alert,
   TextField,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  CircularProgress,
 } from "@mui/material";
 import { useAuth } from "../contexts/AuthContext";
+import { toast } from "react-toastify";
 import api from "../api/axios";
 
 export const ComplaintDetail = () => {
@@ -24,14 +30,18 @@ export const ComplaintDetail = () => {
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const [text, setText] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const isNew = id === "new";
 
   useEffect(() => {
-    if (isNew) return;
+    if (isNew) {
+      setLoading(false);
+      return;
+    }
     const fetchComplaint = async () => {
+      setLoading(true);
       try {
         const response = await fetch(`/api/complaints/${id}`, {
           headers: {
@@ -40,28 +50,38 @@ export const ComplaintDetail = () => {
         });
         if (!response.ok) throw new Error("Failed to fetch complaint");
         const data = await response.json();
+
+        // Check if user has access to this complaint
+        if (!isAdmin() && data.submitted_by !== user.username) {
+          toast.error("You don't have access to this complaint");
+          navigate("/complaints");
+          return;
+        }
+
         setComplaint(data);
         setCategory(data.category);
         setStatus(data.status);
         setText(data.text);
       } catch (error) {
-        setError("Error fetching complaint details");
+        toast.error("Error fetching complaint details");
         console.error("Error:", error);
+        navigate("/complaints");
+      } finally {
+        setLoading(false);
       }
     };
     fetchComplaint();
-  }, [id, user.token, isNew]);
+  }, [id, user.token, isNew, user.username, navigate]);
 
   const handleCreate = async () => {
     try {
       await api.post("/complaints", { text });
-      setSuccess("Complaint created successfully");
+      toast.success("Complaint created successfully");
       setTimeout(() => {
-        setSuccess("");
         navigate("/complaints");
       }, 1500);
     } catch (error) {
-      setError(error.response?.data?.message || "Error creating complaint");
+      toast.error(error.response?.data?.message || "Error creating complaint");
       console.error("Error:", error);
     }
   };
@@ -82,27 +102,43 @@ export const ComplaintDetail = () => {
 
       if (!response.ok) throw new Error("Failed to update complaint");
 
-      setSuccess("Complaint updated successfully");
-      setTimeout(() => setSuccess(""), 3000);
+      toast.success("Complaint updated successfully");
+      setTimeout(() => {
+        navigate("/complaints");
+      }, 1500);
     } catch (error) {
-      setError("Error updating complaint");
+      toast.error("Error updating complaint");
       console.error("Error:", error);
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/complaints/${id}`);
+      setDeleteDialogOpen(false);
+      toast.success("Complaint deleted successfully");
+      navigate("/complaints");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error deleting complaint");
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="60vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   if (isNew) {
     return (
       <Box sx={{ maxWidth: 800, margin: "0 auto", padding: 3 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {success}
-          </Alert>
-        )}
         <Card>
           <CardContent>
             <Typography variant="h5" gutterBottom>
@@ -142,22 +178,11 @@ export const ComplaintDetail = () => {
   }
 
   if (!complaint) {
-    return <Typography>Loading...</Typography>;
+    return <Typography>Complaint not found</Typography>;
   }
 
   return (
     <Box sx={{ maxWidth: 800, margin: "0 auto", padding: 3 }}>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
-
       <Card>
         <CardContent>
           <Typography variant="h5" gutterBottom>
@@ -182,24 +207,24 @@ export const ComplaintDetail = () => {
             {(complaint.confidence * 100).toFixed(2)}%
           </Typography>
 
-          {isAdmin() ? (
-            <Box sx={{ mt: 3 }}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
+          {isAdmin() && (
+            <>
+              <FormControl fullWidth margin="normal">
                 <InputLabel>Category</InputLabel>
                 <Select
                   value={category}
                   label="Category"
                   onChange={(e) => setCategory(e.target.value)}
                 >
+                  <MenuItem value="billing">Billing</MenuItem>
                   <MenuItem value="delivery">Delivery</MenuItem>
                   <MenuItem value="quality">Quality</MenuItem>
-                  <MenuItem value="billing">Billing</MenuItem>
                   <MenuItem value="service">Service</MenuItem>
-                  <MenuItem value="other">Other</MenuItem>
+                  <MenuItem value="technical">Technical</MenuItem>
                 </Select>
               </FormControl>
 
-              <FormControl fullWidth sx={{ mb: 2 }}>
+              <FormControl fullWidth margin="normal">
                 <InputLabel>Status</InputLabel>
                 <Select
                   value={status}
@@ -213,24 +238,24 @@ export const ComplaintDetail = () => {
                 </Select>
               </FormControl>
 
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleUpdate}
-                sx={{ mr: 1 }}
-              >
-                Update Complaint
-              </Button>
-            </Box>
-          ) : (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="body1">
-                <strong>Category:</strong> {category}
-              </Typography>
-              <Typography variant="body1">
-                <strong>Status:</strong> {status}
-              </Typography>
-            </Box>
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleUpdate}
+                  sx={{ mr: 1 }}
+                >
+                  Update
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  Delete
+                </Button>
+              </Box>
+            </>
           )}
 
           <Button
@@ -242,6 +267,25 @@ export const ComplaintDetail = () => {
           </Button>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this complaint? This action cannot
+            be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

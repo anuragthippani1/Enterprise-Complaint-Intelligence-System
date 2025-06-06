@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_jwt_extended import (
     JWTManager, create_access_token,
     jwt_required, get_jwt_identity, get_jwt
@@ -16,6 +16,8 @@ import joblib
 from functools import wraps
 import numpy as np
 from bson.errors import InvalidId
+import csv
+from io import StringIO
 
 load_dotenv()
 
@@ -140,11 +142,35 @@ def get_complaints():
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 10))
     skip = (page - 1) * per_page
+    
+    # Get current user's role and identity
+    current_user = get_jwt_identity()
+    claims = get_jwt()
+    is_admin = claims.get('role') == 'admin'
+    
+    # Build query based on user role
+    query = {}
+    if not is_admin:
+        query['submitted_by'] = current_user
+    
+    # Add category filter if provided
+    category = request.args.get('category')
+    if category:
+        query['category'] = category
+    
+    # Add status filter if provided
+    status = request.args.get('status')
+    if status:
+        query['status'] = status
 
-    complaints = list(complaints_collection.find().skip(skip).limit(per_page))
+    # Get paginated complaints
+    complaints = list(complaints_collection.find(query).skip(skip).limit(per_page))
     for c in complaints:
         c['_id'] = str(c['_id'])
-    total = complaints_collection.count_documents({})
+    
+    # Get total count for pagination
+    total = complaints_collection.count_documents(query)
+    
     return jsonify({
         'complaints': complaints,
         'total': total,
@@ -184,6 +210,7 @@ def update_complaint(complaint_id):
     if not updated:
         return jsonify({'message': 'Complaint not found'}), 404
 
+    updated['_id'] = str(updated['_id'])  # Fix for ObjectId serialization
     return jsonify(updated)
 
 # Dashboard summary
@@ -237,6 +264,87 @@ def retrain_model():
     vectorizer = new_vectorizer
 
     return jsonify({'message': 'Model retrained successfully'})
+
+# Delete complaint (admin only)
+@app.route('/api/complaints/<complaint_id>', methods=['DELETE'])
+@jwt_required()
+@role_required('admin')
+def delete_complaint(complaint_id):
+    try:
+        oid = ObjectId(complaint_id)
+    except InvalidId:
+        return jsonify({'message': 'Invalid complaint ID'}), 400
+
+    result = complaints_collection.delete_one({'_id': oid})
+    if result.deleted_count == 0:
+        return jsonify({'message': 'Complaint not found'}), 404
+    return jsonify({'message': 'Complaint deleted successfully'}), 200
+
+# Export complaints
+@app.route('/api/complaints/export', methods=['GET'])
+@jwt_required()
+def export_complaints():
+    # Get current user's role and identity
+    current_user = get_jwt_identity()
+    claims = get_jwt()
+    is_admin = claims.get('role') == 'admin'
+    
+    # Build query based on user role and filters
+    query = {}
+    if not is_admin:
+        query['submitted_by'] = current_user
+    
+    # Add category filter if provided
+    category = request.args.get('category')
+    if category:
+        query['category'] = category
+    
+    # Add status filter if provided
+    status = request.args.get('status')
+    if status:
+        query['status'] = status
+
+    # Get format (default to CSV)
+    format_type = request.args.get('format', 'csv').lower()
+    
+    # Get all matching complaints
+    complaints = list(complaints_collection.find(query))
+    
+    if format_type == 'csv':
+        # Create CSV in memory
+        si = StringIO()
+        cw = csv.writer(si)
+        
+        # Write header
+        cw.writerow(['ID', 'Text', 'Category', 'Status', 'Submitted By', 'Timestamp', 'Confidence'])
+        
+        # Write data
+        for complaint in complaints:
+            cw.writerow([
+                str(complaint['_id']),
+                complaint['text'],
+                complaint['category'],
+                complaint['status'],
+                complaint['submitted_by'],
+                complaint['timestamp'].isoformat(),
+                f"{complaint['confidence']:.2%}"
+            ])
+        
+        # Create the response
+        output = si.getvalue()
+        si.close()
+        
+        # Generate filename with timestamp
+        filename = f"complaints_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        
+        return send_file(
+            StringIO(output),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=filename
+        )
+    
+    return jsonify({'message': 'Unsupported format'}), 400
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8888)

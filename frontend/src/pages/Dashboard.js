@@ -5,38 +5,30 @@ import {
   Card,
   CardContent,
   Typography,
-  Alert,
   CircularProgress,
 } from "@mui/material";
 import { useAuth } from "../contexts/AuthContext";
-import { Bar, Pie } from "react-chartjs-2";
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
   Legend,
-  ArcElement,
-} from "chart.js";
+  ResponsiveContainer,
+} from "recharts";
+import { toast } from "react-toastify";
 import api from "../api/axios";
 
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
 export const Dashboard = () => {
   const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,7 +38,7 @@ export const Dashboard = () => {
         const response = await api.get("/dashboard/summary");
         setDashboardData(response.data);
       } catch (err) {
-        setError(
+        toast.error(
           err.response?.data?.message || "Failed to fetch dashboard summary"
         );
       } finally {
@@ -57,51 +49,37 @@ export const Dashboard = () => {
   }, []);
 
   if (loading) {
-    return <CircularProgress />;
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="60vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (!dashboardData) {
-    return <Typography>Loading...</Typography>;
+    return <Typography>No data available</Typography>;
   }
 
-  const categoryData = {
-    labels: dashboardData.categories.map((c) => c._id),
-    datasets: [
-      {
-        data: dashboardData.categories.map((c) => c.count),
-        backgroundColor: [
-          "#FF6384",
-          "#36A2EB",
-          "#FFCE56",
-          "#4BC0C0",
-          "#9966FF",
-        ],
-      },
-    ],
-  };
+  const categoryData = dashboardData.categories.map((c) => ({
+    name: c._id,
+    value: c.count,
+  }));
 
-  const timelineData = {
-    labels: dashboardData.timeline.map((t) => t._id),
-    datasets: [
-      {
-        label: "Complaints Over Time",
-        data: dashboardData.timeline.map((t) => t.count),
-        backgroundColor: "#36A2EB",
-      },
-    ],
-  };
+  const timelineData = dashboardData.timeline.map((t) => ({
+    date: t._id,
+    complaints: t.count,
+  }));
 
   return (
     <Box sx={{ padding: 3 }}>
       <Typography variant="h4" gutterBottom>
         Dashboard
       </Typography>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
@@ -117,17 +95,38 @@ export const Dashboard = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={8}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Categories Distribution
               </Typography>
               <Box sx={{ height: 300 }}>
-                <Pie
-                  data={categoryData}
-                  options={{ maintainAspectRatio: false }}
-                />
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) =>
+                        `${name} (${(percent * 100).toFixed(0)}%)`
+                      }
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
               </Box>
             </CardContent>
           </Card>
@@ -140,17 +139,20 @@ export const Dashboard = () => {
                 Complaints Timeline
               </Typography>
               <Box sx={{ height: 300 }}>
-                <Bar
-                  data={timelineData}
-                  options={{
-                    maintainAspectRatio: false,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                      },
-                    },
-                  }}
-                />
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={timelineData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar
+                      dataKey="complaints"
+                      fill="#8884d8"
+                      name="Number of Complaints"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               </Box>
             </CardContent>
           </Card>

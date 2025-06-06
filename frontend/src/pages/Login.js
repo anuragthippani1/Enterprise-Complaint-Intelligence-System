@@ -7,9 +7,9 @@ import {
   TextField,
   Button,
   Typography,
-  Alert,
 } from "@mui/material";
 import { useAuth } from "../contexts/AuthContext";
+import { toast } from "react-toastify";
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -17,23 +17,22 @@ export const Login = () => {
   const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
 
     try {
       const result = await login(username, password);
       if (result.success) {
+        toast.success("Login successful!");
         // Navigate to the page they tried to visit or home
         const from = location.state?.from?.pathname || "/";
         navigate(from, { replace: true });
       } else {
-        setError(result.error || "Login failed");
+        toast.error(result.error || "Login failed");
       }
     } catch (err) {
-      setError("An error occurred during login");
+      toast.error("An error occurred during login");
       console.error("Login error:", err);
     }
   };
@@ -56,12 +55,6 @@ export const Login = () => {
           >
             ACCS Login
           </Typography>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
 
           <form onSubmit={handleSubmit}>
             <TextField

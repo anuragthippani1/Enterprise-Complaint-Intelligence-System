@@ -173,3 +173,4 @@ const ComplaintDetail = () => {
 };
 
 export default ComplaintDetail;
+ 
