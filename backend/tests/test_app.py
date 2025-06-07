@@ -136,4 +136,80 @@ def test_export_complaints_unauthorized(client):
     response = client.get('/api/complaints/export?format=csv')
     assert response.status_code == 401
 
+def test_export_complaints_pdf_admin(client, mock_mongo):
+    mock_mongo.users.insert_one({
+        'username': 'admin',
+        'password': 'hashed_password',
+        'role': 'admin'
+    })
+    mock_mongo.complaints.insert_many([
+        {
+            'text': 'Test Complaint 1',
+            'category': 'Technical',
+            'status': 'Open',
+            'submitted_by': 'admin',
+            'timestamp': datetime.utcnow(),
+            'confidence': 0.95
+        },
+        {
+            'text': 'Test Complaint 2',
+            'category': 'Billing',
+            'status': 'Closed',
+            'submitted_by': 'user1',
+            'timestamp': datetime.utcnow(),
+            'confidence': 0.85
+        }
+    ])
+    login_response = client.post('/api/auth/login', json={
+        'username': 'admin',
+        'password': 'admin123'
+    })
+    token = json.loads(login_response.data)['access_token']
+    response = client.get(
+        '/api/complaints/export?format=pdf',
+        headers={'Authorization': f'Bearer {token}'}
+    )
+    assert response.status_code == 200
+    assert response.headers['Content-Type'] == 'application/pdf'
+    assert 'attachment' in response.headers['Content-Disposition']
+    assert response.data[:4] == b'%PDF'  # PDF magic number
+
+def test_export_complaints_pdf_user(client, mock_mongo):
+    mock_mongo.users.insert_one({
+        'username': 'user1',
+        'password': 'hashed_password',
+        'role': 'user'
+    })
+    mock_mongo.complaints.insert_many([
+        {
+            'text': 'Test Complaint 1',
+            'category': 'Technical',
+            'status': 'Open',
+            'submitted_by': 'user1',
+            'timestamp': datetime.utcnow(),
+            'confidence': 0.95
+        },
+        {
+            'text': 'Test Complaint 2',
+            'category': 'Billing',
+            'status': 'Closed',
+            'submitted_by': 'admin',
+            'timestamp': datetime.utcnow(),
+            'confidence': 0.85
+        }
+    ])
+    login_response = client.post('/api/auth/login', json={
+        'username': 'user1',
+        'password': 'user123'
+    })
+    token = json.loads(login_response.data)['access_token']
+    response = client.get(
+        '/api/complaints/export?format=pdf',
+        headers={'Authorization': f'Bearer {token}'}
+    )
+    assert response.status_code == 200
+    assert response.headers['Content-Type'] == 'application/pdf'
+    assert 'attachment' in response.headers['Content-Disposition']
+    assert response.data[:4] == b'%PDF'  # PDF magic number
+
 # ... existing tests ... 

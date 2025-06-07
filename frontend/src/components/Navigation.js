@@ -40,15 +40,26 @@ export const Navigation = () => {
   return (
     <AppBar position="static">
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{ flexGrow: 0, cursor: "pointer", mr: 3 }}
+          onClick={() => navigate("/")}
+        >
           ACCS
         </Typography>
 
-        <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
           <Button color="inherit" onClick={() => navigate("/")} sx={{ mr: 2 }}>
+            Home
+          </Button>
+          <Button
+            color="inherit"
+            onClick={() => navigate("/dashboard")}
+            sx={{ mr: 2 }}
+          >
             Dashboard
           </Button>
-
           <Button
             color="inherit"
             onClick={() => navigate("/complaints")}
@@ -56,7 +67,6 @@ export const Navigation = () => {
           >
             Complaints
           </Button>
-
           {isAdmin() && (
             <Button
               color="inherit"
@@ -66,11 +76,9 @@ export const Navigation = () => {
               Admin Panel
             </Button>
           )}
-
           <IconButton size="large" onClick={handleMenu} color="inherit">
             <AccountCircle />
           </IconButton>
-
           <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}

@@ -17,10 +17,15 @@ import {
   DialogContentText,
   DialogTitle,
   CircularProgress,
+  Alert,
 } from "@mui/material";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
 import api from "../api/axios";
+import ListIcon from "@mui/icons-material/List";
+
+const categories = ["billing", "delivery", "quality", "service", "technical"];
+const statuses = ["pending", "in_progress", "resolved", "closed"];
 
 export const ComplaintDetail = () => {
   const { id } = useParams();
@@ -31,6 +36,7 @@ export const ComplaintDetail = () => {
   const [status, setStatus] = useState("");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const isNew = id === "new";
@@ -40,74 +46,71 @@ export const ComplaintDetail = () => {
       setLoading(false);
       return;
     }
-    const fetchComplaint = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/complaints/${id}`, {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        });
-        if (!response.ok) throw new Error("Failed to fetch complaint");
-        const data = await response.json();
-
-        // Check if user has access to this complaint
-        if (!isAdmin() && data.submitted_by !== user.username) {
-          toast.error("You don't have access to this complaint");
-          navigate("/complaints");
-          return;
-        }
-
-        setComplaint(data);
-        setCategory(data.category);
-        setStatus(data.status);
-        setText(data.text);
-      } catch (error) {
-        toast.error("Error fetching complaint details");
-        console.error("Error:", error);
-        navigate("/complaints");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchComplaint();
-  }, [id, user.token, isNew, user.username, navigate]);
+  }, [id]);
+
+  const fetchComplaint = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await api.get(`/complaints/${id}`);
+      const data = response.data;
+
+      // Check if user has access to this complaint
+      if (!isAdmin() && data.user !== user.username) {
+        setError("You don't have access to this complaint");
+        toast.error("You don't have access to this complaint");
+        navigate("/complaints");
+        return;
+      }
+
+      setComplaint(data);
+      setCategory(data.category || "");
+      setStatus(data.status || "");
+      setText(data.text || "");
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || "Error fetching complaint details";
+      setError(errorMessage);
+      toast.error(errorMessage);
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreate = async () => {
+    if (!text.trim()) {
+      toast.error("Please enter complaint text");
+      return;
+    }
+
     try {
       await api.post("/complaints", { text });
       toast.success("Complaint created successfully");
-      setTimeout(() => {
-        navigate("/complaints");
-      }, 1500);
+      navigate("/complaints");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error creating complaint");
+      const errorMessage =
+        error.response?.data?.message || "Error creating complaint";
+      toast.error(errorMessage);
       console.error("Error:", error);
     }
   };
 
   const handleUpdate = async () => {
+    if (!category || !status) {
+      toast.error("Please select both category and status");
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/complaints/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user.token}`,
-        },
-        body: JSON.stringify({
-          category,
-          status,
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to update complaint");
-
+      await api.put(`/complaints/${id}`, { category, status });
       toast.success("Complaint updated successfully");
-      setTimeout(() => {
-        navigate("/complaints");
-      }, 1500);
+      fetchComplaint(); // Refresh the complaint data
     } catch (error) {
-      toast.error("Error updating complaint");
+      const errorMessage =
+        error.response?.data?.message || "Error updating complaint";
+      toast.error(errorMessage);
       console.error("Error:", error);
     }
   };
@@ -115,11 +118,13 @@ export const ComplaintDetail = () => {
   const handleDelete = async () => {
     try {
       await api.delete(`/complaints/${id}`);
-      setDeleteDialogOpen(false);
       toast.success("Complaint deleted successfully");
       navigate("/complaints");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error deleting complaint");
+      const errorMessage =
+        error.response?.data?.message || "Error deleting complaint";
+      toast.error(errorMessage);
+      console.error("Error:", error);
     }
   };
 
@@ -136,78 +141,84 @@ export const ComplaintDetail = () => {
     );
   }
 
-  if (isNew) {
+  if (error) {
     return (
-      <Box sx={{ maxWidth: 800, margin: "0 auto", padding: 3 }}>
-        <Card>
-          <CardContent>
-            <Typography variant="h5" gutterBottom>
-              New Complaint
-            </Typography>
-            <TextField
-              fullWidth
-              label="Complaint Text"
-              variant="outlined"
-              margin="normal"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              required
-              multiline
-              minRows={3}
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleCreate}
-              sx={{ mt: 2 }}
-              disabled={!text.trim()}
-            >
-              Submit Complaint
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => navigate("/complaints")}
-              sx={{ mt: 2, ml: 2 }}
-            >
-              Back to List
-            </Button>
-          </CardContent>
-        </Card>
+      <Box sx={{ padding: 3 }}>
+        <Alert severity="error">{error}</Alert>
       </Box>
     );
   }
 
-  if (!complaint) {
-    return <Typography>Complaint not found</Typography>;
-  }
-
   return (
-    <Box sx={{ maxWidth: 800, margin: "0 auto", padding: 3 }}>
-      <Card>
+    <Box sx={{ padding: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
+        <Typography variant="h4">
+          {isNew ? "New Complaint" : "Complaint Details"}
+        </Typography>
+        <Button
+          variant="outlined"
+          onClick={() => navigate("/complaints")}
+          startIcon={<ListIcon />}
+        >
+          Back to List
+        </Button>
+      </Box>
+
+      <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="h5" gutterBottom>
-            Complaint Details
-          </Typography>
+          {isNew ? (
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Complaint Text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              margin="normal"
+            />
+          ) : (
+            <Typography variant="body1" sx={{ whiteSpace: "pre-wrap", mb: 2 }}>
+              {complaint?.text}
+            </Typography>
+          )}
 
-          <Typography variant="body1" paragraph>
-            <strong>Text:</strong> {complaint.text}
-          </Typography>
+          {!isNew && (
+            <>
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                gutterBottom
+              >
+                Submitted by: {complaint?.user}
+              </Typography>
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                gutterBottom
+              >
+                Created: {new Date(complaint?.created_at).toLocaleString()}
+              </Typography>
+              {complaint?.updated_at && (
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  gutterBottom
+                >
+                  Last updated:{" "}
+                  {new Date(complaint.updated_at).toLocaleString()}
+                </Typography>
+              )}
+            </>
+          )}
 
-          <Typography variant="body2" color="textSecondary">
-            <strong>Submitted By:</strong> {complaint.submitted_by}
-          </Typography>
-
-          <Typography variant="body2" color="textSecondary">
-            <strong>Timestamp:</strong>{" "}
-            {new Date(complaint.timestamp).toLocaleString()}
-          </Typography>
-
-          <Typography variant="body2" color="textSecondary" paragraph>
-            <strong>ML Confidence:</strong>{" "}
-            {(complaint.confidence * 100).toFixed(2)}%
-          </Typography>
-
-          {isAdmin() && (
+          {isAdmin() && !isNew && (
             <>
               <FormControl fullWidth margin="normal">
                 <InputLabel>Category</InputLabel>
@@ -216,11 +227,11 @@ export const ComplaintDetail = () => {
                   label="Category"
                   onChange={(e) => setCategory(e.target.value)}
                 >
-                  <MenuItem value="billing">Billing</MenuItem>
-                  <MenuItem value="delivery">Delivery</MenuItem>
-                  <MenuItem value="quality">Quality</MenuItem>
-                  <MenuItem value="service">Service</MenuItem>
-                  <MenuItem value="technical">Technical</MenuItem>
+                  {categories.map((cat) => (
+                    <MenuItem key={cat} value={cat}>
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
 
@@ -231,10 +242,16 @@ export const ComplaintDetail = () => {
                   label="Status"
                   onChange={(e) => setStatus(e.target.value)}
                 >
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="in_progress">In Progress</MenuItem>
-                  <MenuItem value="resolved">Resolved</MenuItem>
-                  <MenuItem value="closed">Closed</MenuItem>
+                  {statuses.map((stat) => (
+                    <MenuItem key={stat} value={stat}>
+                      {stat
+                        .split("_")
+                        .map(
+                          (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                        )
+                        .join(" ")}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
 
@@ -258,13 +275,16 @@ export const ComplaintDetail = () => {
             </>
           )}
 
-          <Button
-            variant="outlined"
-            onClick={() => navigate("/complaints")}
-            sx={{ mt: 2 }}
-          >
-            Back to List
-          </Button>
+          {isNew && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCreate}
+              sx={{ mt: 2 }}
+            >
+              Submit Complaint
+            </Button>
+          )}
         </CardContent>
       </Card>
 
@@ -281,7 +301,7 @@ export const ComplaintDetail = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDelete} color="error">
+          <Button onClick={handleDelete} color="error" autoFocus>
             Delete
           </Button>
         </DialogActions>

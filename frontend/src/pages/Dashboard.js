@@ -6,6 +6,7 @@ import {
   CardContent,
   Typography,
   CircularProgress,
+  Alert,
 } from "@mui/material";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -28,8 +29,14 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
 export const Dashboard = () => {
   const { user } = useAuth();
-  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardData, setDashboardData] = useState({
+    total_complaints: 0,
+    categories: [],
+    statuses: [],
+    timeline: [],
+  });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -38,9 +45,10 @@ export const Dashboard = () => {
         const response = await api.get("/dashboard/summary");
         setDashboardData(response.data);
       } catch (err) {
-        toast.error(
-          err.response?.data?.message || "Failed to fetch dashboard summary"
-        );
+        const errorMessage =
+          err.response?.data?.message || "Failed to fetch dashboard summary";
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -61,19 +69,31 @@ export const Dashboard = () => {
     );
   }
 
-  if (!dashboardData) {
-    return <Typography>No data available</Typography>;
+  if (error) {
+    return (
+      <Box sx={{ padding: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
   }
 
-  const categoryData = dashboardData.categories.map((c) => ({
-    name: c._id,
-    value: c.count,
-  }));
+  const categoryData =
+    dashboardData.categories?.map((c) => ({
+      name: c._id || "Uncategorized",
+      value: c.count,
+    })) || [];
 
-  const timelineData = dashboardData.timeline.map((t) => ({
-    date: t._id,
-    complaints: t.count,
-  }));
+  const timelineData =
+    dashboardData.timeline?.map((t) => ({
+      date: t._id,
+      complaints: t.count,
+    })) || [];
+
+  const statusData =
+    dashboardData.statuses?.map((s) => ({
+      name: s._id || "Unknown",
+      value: s.count,
+    })) || [];
 
   return (
     <Box sx={{ padding: 3 }}>
@@ -149,6 +169,32 @@ export const Dashboard = () => {
                     <Bar
                       dataKey="complaints"
                       fill="#8884d8"
+                      name="Number of Complaints"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Status Distribution
+              </Typography>
+              <Box sx={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={statusData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar
+                      dataKey="value"
+                      fill="#82ca9d"
                       name="Number of Complaints"
                     />
                   </BarChart>

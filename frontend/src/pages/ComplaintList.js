@@ -194,15 +194,26 @@ export const ComplaintList = () => {
             }}
           >
             {isAdmin() && (
-              <Tooltip title="Export to CSV">
-                <IconButton
-                  onClick={() => handleExport("csv")}
-                  color="primary"
-                  sx={{ mr: 1 }}
-                >
-                  <FileDownloadIcon />
-                </IconButton>
-              </Tooltip>
+              <>
+                <Tooltip title="Export to CSV">
+                  <IconButton
+                    onClick={() => handleExport("csv")}
+                    color="primary"
+                    sx={{ mr: 1 }}
+                  >
+                    <FileDownloadIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Export to PDF">
+                  <IconButton
+                    onClick={() => handleExport("pdf")}
+                    color="secondary"
+                    sx={{ mr: 1 }}
+                  >
+                    <FileDownloadIcon />
+                  </IconButton>
+                </Tooltip>
+              </>
             )}
             <Button
               variant="contained"
@@ -286,3 +297,4 @@ export const ComplaintList = () => {
     </Box>
   );
 };
+ 
