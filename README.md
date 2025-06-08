@@ -274,14 +274,5 @@ The complaint classification model uses:
 4. Push to the branch
 5. Create a Pull Request
 
-## License
 
-This project is licensed under the MIT License.
 
-## Screenshots
-
-[Add screenshots of your application here]
-
-## Support
-
-For support, please open an issue in the GitHub repository.
