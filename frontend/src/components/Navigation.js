@@ -33,62 +33,81 @@ export const Navigation = () => {
     navigate("/login");
   };
 
-  if (!user || location.pathname === "/login") {
+  if (location.pathname === "/login") {
     return null;
   }
 
   return (
-    <AppBar position="static">
+    <AppBar
+      position="static"
+      sx={{
+        backgroundColor: "#C7CDAD", // Sage
+        color: "#1f2937",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+      }}
+    >
       <Toolbar>
         <Typography
           variant="h6"
           component="div"
-          sx={{ flexGrow: 0, cursor: "pointer", mr: 3 }}
+          sx={{
+            flexGrow: 0,
+            cursor: "pointer",
+            mr: 3,
+            fontFamily: 'Panchang, sans-serif',
+            fontWeight: 800,
+            letterSpacing: 0.5,
+          }}
           onClick={() => navigate("/")}
         >
           ACCS
         </Typography>
 
         <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
-          <Button color="inherit" onClick={() => navigate("/")} sx={{ mr: 2 }}>
+          <Button onClick={() => navigate("/")} sx={{ mr: 2, color: "#1f2937" }}>
             Home
           </Button>
           <Button
-            color="inherit"
             onClick={() => navigate("/dashboard")}
-            sx={{ mr: 2 }}
+            sx={{ mr: 2, color: "#1f2937" }}
           >
             Dashboard
           </Button>
           <Button
-            color="inherit"
             onClick={() => navigate("/complaints")}
-            sx={{ mr: 2 }}
+            sx={{ mr: 2, color: "#1f2937" }}
           >
             Complaints
           </Button>
-          {isAdmin() && (
+          {user && isAdmin() && (
             <Button
-              color="inherit"
               onClick={() => navigate("/admin")}
-              sx={{ mr: 2 }}
+              sx={{ mr: 2, color: "#1f2937" }}
             >
               Admin Panel
             </Button>
           )}
-          <IconButton size="large" onClick={handleMenu} color="inherit">
-            <AccountCircle />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
-          >
-            <MenuItem disabled>
-              {user.username} ({user.role})
-            </MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-          </Menu>
+          {user ? (
+            <>
+              <IconButton size="large" onClick={handleMenu} sx={{ color: "#1f2937" }}>
+                <AccountCircle />
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+              >
+                <MenuItem disabled>
+                  {user.username} ({user.role})
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <Button color="inherit" onClick={() => navigate("/login")}>
+              Login
+            </Button>
+          )}
         </Box>
       </Toolbar>
     </AppBar>

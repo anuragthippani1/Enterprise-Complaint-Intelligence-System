@@ -10,7 +10,6 @@ import {
   CardContent,
   CardActions,
   Paper,
-  Chip,
   Stack,
   Avatar,
   Divider,
@@ -20,13 +19,10 @@ import {
   List as ListIcon,
   AdminPanelSettings as AdminIcon,
   SmartToy as AIIcon,
-  TrendingUp as TrendingIcon,
-  Speed as SpeedIcon,
   Psychology as BrainIcon,
   SentimentSatisfied as SentimentIcon,
   Flag as PriorityIcon,
   Loop as FeedbackIcon,
-  AutoAwesome as MagicIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -85,89 +81,86 @@ export const Home = () => {
   ];
 
   return (
-    <Box>
+    <Box sx={{ bgcolor: "#F2F3ED" }}>
       {/* Hero Section */}
       <Box
         sx={{
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          background: "linear-gradient(135deg, #C7CDAD 0%, #D1D3C4 50%, #D8DAD0 100%)",
           color: "white",
-          py: 10,
+          minHeight: { xs: "calc(100svh - 56px)", md: "calc(100vh - 64px)" },
+          py: { xs: 6, md: 8 },
           px: 2,
+          position: "relative",
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
         }}
       >
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: "center" }}>
-            <Avatar
-              sx={{
-                width: 80,
-                height: 80,
-                bgcolor: "white",
-                color: "#667eea",
-                margin: "0 auto 20px",
-              }}
-            >
-              <AIIcon sx={{ fontSize: 50 }} />
-            </Avatar>
+          <Box
+            sx={{
+              textAlign: "center",
+              maxWidth: 900,
+              mx: "auto",
+              backdropFilter: "blur(10px)",
+              backgroundColor: "rgba(255,255,255,0.12)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: 4,
+              px: { xs: 3, md: 6 },
+              py: { xs: 5, md: 7 },
+              boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+            }}
+          >
             <Typography
               variant="h2"
               component="h1"
               gutterBottom
-              sx={{ fontWeight: "bold", mb: 2 }}
+              sx={{
+                fontWeight: 400,
+                mb: 2,
+                letterSpacing: -0.5,
+                fontFamily: 'Tanker, sans-serif',
+              }}
             >
               Welcome to ACCS
             </Typography>
-            <Typography variant="h5" sx={{ mb: 4, opacity: 0.95 }}>
+            <Typography
+              variant="h5"
+              sx={{
+                mb: 2,
+                opacity: 0.95,
+                fontFamily: 'Panchang, sans-serif',
+                fontWeight: 700,
+                letterSpacing: 0.2,
+              }}
+            >
               Automated Complaint Classification System
             </Typography>
-            <Typography variant="h6" sx={{ mb: 4, opacity: 0.9 }}>
-              Powered by Machine Learning • Sentiment Analysis • Priority Management
-            </Typography>
-            <Stack
-              direction="row"
-              spacing={2}
-              justifyContent="center"
-              sx={{ mb: 4 }}
+            <Typography
+              variant="h6"
+              sx={{ mb: 2, opacity: 0.95, lineHeight: 1.5 }}
             >
-              <Chip
-                icon={<MagicIcon />}
-                label="AI-Powered"
-                sx={{
-                  bgcolor: "rgba(255,255,255,0.2)",
-                  color: "white",
-                  fontWeight: "bold",
-                }}
-              />
-              <Chip
-                icon={<SpeedIcon />}
-                label="Real-time"
-                sx={{
-                  bgcolor: "rgba(255,255,255,0.2)",
-                  color: "white",
-                  fontWeight: "bold",
-                }}
-              />
-              <Chip
-                icon={<TrendingIcon />}
-                label="Self-Improving"
-                sx={{
-                  bgcolor: "rgba(255,255,255,0.2)",
-                  color: "white",
-                  fontWeight: "bold",
-                }}
-              />
-            </Stack>
+              Effortlessly manage and resolve customer complaints with the power of Artificial Intelligence.
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 5, opacity: 0.9, lineHeight: 1.7 }}>
+              Our system automatically analyzes, classifies, and organizes complaints to help organizations respond faster and smarter.
+            </Typography>
+            {/* Removed feature chips and powered tagline as requested */}
             <Stack direction="row" spacing={2} justifyContent="center">
               <Button
                 variant="contained"
                 size="large"
                 onClick={() => navigate("/complaints")}
                 sx={{
-                  bgcolor: "white",
-                  color: "#667eea",
-                  "&:hover": { bgcolor: "#f5f5f5" },
+                  background: "linear-gradient(135deg, #C7CDAD, #D1D3C4)",
+                  color: "#1f2937",
+                  border: "1px solid rgba(31,41,55,0.15)",
+                  "&:hover": { filter: "brightness(0.98)" },
                   px: 4,
                   py: 1.5,
-                  fontSize: "1.1rem",
+                  fontSize: "1.05rem",
+                  fontWeight: 700,
+                  borderRadius: 999,
                 }}
               >
                 Get Started
@@ -177,15 +170,17 @@ export const Home = () => {
                 size="large"
                 onClick={() => navigate("/dashboard")}
                 sx={{
-                  borderColor: "white",
+                  borderColor: "rgba(255,255,255,0.6)",
                   color: "white",
                   "&:hover": {
                     borderColor: "white",
-                    bgcolor: "rgba(255,255,255,0.1)",
+                    bgcolor: "rgba(255,255,255,0.12)",
                   },
                   px: 4,
                   py: 1.5,
-                  fontSize: "1.1rem",
+                  fontSize: "1.05rem",
+                  fontWeight: 700,
+                  borderRadius: 999,
                 }}
               >
                 View Dashboard
@@ -194,6 +189,8 @@ export const Home = () => {
           </Box>
         </Container>
       </Box>
+      {/* Section Separator */}
+      <Box sx={{ height: 20, background: "linear-gradient(180deg, #D8DAD0, #F2F3ED)" }} />
 
       {/* Main Features Section */}
       <Container maxWidth="lg" sx={{ mt: 6, mb: 8 }}>
@@ -214,14 +211,19 @@ export const Home = () => {
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
-                  transition: "transform 0.2s, box-shadow 0.2s",
+                  borderRadius: 4,
+                  background:
+                    "linear-gradient(#ffffff, #ffffff) padding-box, linear-gradient(135deg, #7e57c2, #26c6da) border-box",
+                  border: "2px solid transparent",
+                  boxShadow: "0 10px 30px rgba(24, 20, 54, 0.1)",
+                  transition: "transform .25s ease, box-shadow .25s ease",
                   "&:hover": {
-                    transform: "translateY(-8px)",
-                    boxShadow: 6,
+                    transform: "translateY(-6px)",
+                    boxShadow: "0 14px 40px rgba(24, 20, 54, 0.15)",
                   },
                 }}
               >
-                <CardContent sx={{ flexGrow: 1, textAlign: "center" }}>
+                <CardContent sx={{ flexGrow: 1, textAlign: "center", pt: 5 }}>
                   <Box
                     sx={{
                       display: "flex",
@@ -236,11 +238,11 @@ export const Home = () => {
                     gutterBottom
                     variant="h5"
                     component="h2"
-                    fontWeight="bold"
+                    fontWeight={800}
                   >
                     {feature.title}
                   </Typography>
-                  <Typography color="text.secondary">
+                  <Typography color="text.secondary" sx={{ px: 2 }}>
                     {feature.description}
                   </Typography>
                 </CardContent>
@@ -248,7 +250,12 @@ export const Home = () => {
                   <Button
                     variant="contained"
                     onClick={() => navigate(feature.path)}
-                    sx={{ bgcolor: feature.color }}
+                    sx={{
+                      bgcolor: feature.color,
+                      fontWeight: 700,
+                      borderRadius: 999,
+                      px: 3,
+                    }}
                   >
                     Open {feature.title}
                   </Button>
@@ -260,25 +267,9 @@ export const Home = () => {
       </Container>
 
       {/* AI Features Section */}
-      <Box sx={{ bgcolor: "#f5f5f5", py: 8 }}>
+      <Box sx={{ bgcolor: "#D8DAD0", py: 8 }}>
         <Container maxWidth="lg">
-          <Typography
-            variant="h4"
-            component="h2"
-            gutterBottom
-            align="center"
-            sx={{ mb: 1, fontWeight: "bold" }}
-          >
-            🤖 Powered by Artificial Intelligence
-          </Typography>
-          <Typography
-            variant="body1"
-            align="center"
-            color="text.secondary"
-            sx={{ mb: 6 }}
-          >
-            Advanced features that make complaint management intelligent and efficient
-          </Typography>
+          {/* Removed AI section heading and subtitle as requested */}
 
           <Grid container spacing={3}>
             {aiFeatures.map((feature, index) => (
@@ -336,13 +327,13 @@ export const Home = () => {
               sx={{
                 p: 4,
                 textAlign: "center",
-                bgcolor: "#e3f2fd",
+                bgcolor: "#C7CDAD",
                 cursor: "pointer",
                 transition: "all 0.3s",
                 "&:hover": {
                   transform: "translateY(-8px)",
                   boxShadow: 6,
-                  bgcolor: "#bbdefb",
+                  bgcolor: "#b5be9e",
                 },
               }}
             >
@@ -366,13 +357,13 @@ export const Home = () => {
               sx={{
                 p: 4,
                 textAlign: "center",
-                bgcolor: "#fce4ec",
+                bgcolor: "#D1D3C4",
                 cursor: "pointer",
                 transition: "all 0.3s",
                 "&:hover": {
                   transform: "translateY(-8px)",
                   boxShadow: 6,
-                  bgcolor: "#f8bbd0",
+                  bgcolor: "#c6c8b9",
                 },
               }}
             >
@@ -396,13 +387,13 @@ export const Home = () => {
               sx={{
                 p: 4,
                 textAlign: "center",
-                bgcolor: "#f3e5f5",
+                bgcolor: "#D8DAD0",
                 cursor: "pointer",
                 transition: "all 0.3s",
                 "&:hover": {
                   transform: "translateY(-8px)",
                   boxShadow: 6,
-                  bgcolor: "#e1bee7",
+                  bgcolor: "#cfd1c8",
                 },
               }}
             >
