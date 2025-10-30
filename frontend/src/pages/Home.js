@@ -24,6 +24,7 @@ import {
   Flag as PriorityIcon,
   Loop as FeedbackIcon,
 } from "@mui/icons-material";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { useAuth } from "../contexts/AuthContext";
 
 export const Home = () => {
@@ -81,12 +82,13 @@ export const Home = () => {
   ];
 
   return (
-    <Box sx={{ bgcolor: "#F2F3ED" }}>
+    <Box sx={{ bgcolor: "#0B1020" }}>
       {/* Hero Section */}
       <Box
         sx={{
-          background: "linear-gradient(135deg, #C7CDAD 0%, #D1D3C4 50%, #D8DAD0 100%)",
-          color: "white",
+          background:
+            "radial-gradient(1200px 800px at 20% 10%, rgba(255,255,255,0.06), transparent 60%), linear-gradient(135deg, #0B1020 0%, #121a3a 45%, #1b2b6b 100%)",
+          color: "#ffffff",
           minHeight: { xs: "calc(100svh - 56px)", md: "calc(100vh - 64px)" },
           py: { xs: 6, md: 8 },
           px: 2,
@@ -96,19 +98,66 @@ export const Home = () => {
           alignItems: "center",
         }}
       >
+        {/* Decorative gradient shapes */}
+        <Box
+          component="svg"
+          viewBox="0 0 800 600"
+          sx={{
+            position: "absolute",
+            top: { xs: -120, md: -160 },
+            right: { xs: -140, md: -180 },
+            width: { xs: 400, md: 600 },
+            height: { xs: 300, md: 450 },
+            opacity: 0.45,
+            filter: "blur(20px)",
+            pointerEvents: "none",
+            mixBlendMode: "screen",
+          }}
+        >
+          <defs>
+            <linearGradient id="accsGrad1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#66e0ff" />
+              <stop offset="100%" stopColor="#7b61ff" />
+            </linearGradient>
+          </defs>
+          <path d="M50,50 L650,0 L800,350 L500,600 L100,520 Z" fill="url(#accsGrad1)" />
+        </Box>
+
+        <Box
+          component="svg"
+          viewBox="0 0 700 500"
+          sx={{
+            position: "absolute",
+            bottom: { xs: -120, md: -150 },
+            left: { xs: -120, md: -160 },
+            width: { xs: 360, md: 520 },
+            height: { xs: 260, md: 380 },
+            opacity: 0.35,
+            filter: "blur(18px)",
+            pointerEvents: "none",
+            mixBlendMode: "screen",
+          }}
+        >
+          <defs>
+            <linearGradient id="accsGrad2" x1="1" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ffb36b" />
+              <stop offset="100%" stopColor="#ffd36f" />
+            </linearGradient>
+          </defs>
+          <path d="M0,300 L220,40 L680,120 L520,500 L80,480 Z" fill="url(#accsGrad2)" />
+        </Box>
         <Container maxWidth="lg">
           <Box
             sx={{
-              textAlign: "center",
+              textAlign: { xs: "left", md: "left" },
               maxWidth: 900,
-              mx: "auto",
-              backdropFilter: "blur(10px)",
-              backgroundColor: "rgba(255,255,255,0.12)",
-              border: "1px solid rgba(255,255,255,0.2)",
+              ml: { xs: 1, md: 2 },
+              backgroundColor: "transparent",
+              border: "none",
               borderRadius: 4,
               px: { xs: 3, md: 6 },
               py: { xs: 5, md: 7 },
-              boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+              boxShadow: "none",
             }}
           >
             <Typography
@@ -120,6 +169,7 @@ export const Home = () => {
                 mb: 2,
                 letterSpacing: -0.5,
                 fontFamily: 'Tanker, sans-serif',
+                textAlign: "left",
               }}
             >
               Welcome to ACCS
@@ -136,26 +186,23 @@ export const Home = () => {
             >
               Automated Complaint Classification System
             </Typography>
-            <Typography
-              variant="h6"
-              sx={{ mb: 2, opacity: 0.95, lineHeight: 1.5 }}
-            >
+            <Typography variant="h6" sx={{ mb: 2, opacity: 0.9, lineHeight: 1.5 }}>
               Effortlessly manage and resolve customer complaints with the power of Artificial Intelligence.
             </Typography>
-            <Typography variant="body1" sx={{ mb: 5, opacity: 0.9, lineHeight: 1.7 }}>
+            <Typography variant="body1" sx={{ mb: 5, opacity: 0.8, lineHeight: 1.7 }}>
               Our system automatically analyzes, classifies, and organizes complaints to help organizations respond faster and smarter.
             </Typography>
             {/* Removed feature chips and powered tagline as requested */}
-            <Stack direction="row" spacing={2} justifyContent="center">
+            <Stack direction="row" spacing={2} justifyContent={{ xs: "flex-start", md: "flex-start" }}>
               <Button
                 variant="contained"
                 size="large"
                 onClick={() => navigate("/complaints")}
                 sx={{
-                  background: "linear-gradient(135deg, #C7CDAD, #D1D3C4)",
-                  color: "#1f2937",
-                  border: "1px solid rgba(31,41,55,0.15)",
-                  "&:hover": { filter: "brightness(0.98)" },
+                  background: "#FFFFFF",
+                  color: "#0B1020",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  "&:hover": { background: "#EDEFF5" },
                   px: 4,
                   py: 1.5,
                   fontSize: "1.05rem",
@@ -164,17 +211,18 @@ export const Home = () => {
                 }}
               >
                 Get Started
+                <ArrowForwardRoundedIcon sx={{ ml: 1 }} />
               </Button>
               <Button
                 variant="outlined"
                 size="large"
                 onClick={() => navigate("/dashboard")}
                 sx={{
-                  borderColor: "rgba(255,255,255,0.6)",
-                  color: "white",
+                  borderColor: "rgba(255,255,255,0.5)",
+                  color: "#ffffff",
                   "&:hover": {
-                    borderColor: "white",
-                    bgcolor: "rgba(255,255,255,0.12)",
+                    borderColor: "#ffffff",
+                    bgcolor: "rgba(255,255,255,0.08)",
                   },
                   px: 4,
                   py: 1.5,

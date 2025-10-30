@@ -41,9 +41,10 @@ export const Navigation = () => {
     <AppBar
       position="static"
       sx={{
-        backgroundColor: "#C7CDAD", // Sage
-        color: "#1f2937",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+        backgroundColor: "rgba(11,16,32,0.6)",
+        backdropFilter: "saturate(140%) blur(6px)",
+        color: "#ffffff",
+        boxShadow: "0 6px 20px rgba(0,0,0,0.25)",
       }}
     >
       <Toolbar>
@@ -64,32 +65,32 @@ export const Navigation = () => {
         </Typography>
 
         <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
-          <Button onClick={() => navigate("/")} sx={{ mr: 2, color: "#1f2937" }}>
+          <Button onClick={() => navigate("/")} sx={{ mr: 2, color: "#ffffff" }}>
             Home
           </Button>
           <Button
             onClick={() => navigate("/dashboard")}
-            sx={{ mr: 2, color: "#1f2937" }}
+            sx={{ mr: 2, color: "#ffffff" }}
           >
             Dashboard
           </Button>
           <Button
             onClick={() => navigate("/complaints")}
-            sx={{ mr: 2, color: "#1f2937" }}
+            sx={{ mr: 2, color: "#ffffff" }}
           >
             Complaints
           </Button>
           {user && isAdmin() && (
             <Button
               onClick={() => navigate("/admin")}
-              sx={{ mr: 2, color: "#1f2937" }}
+              sx={{ mr: 2, color: "#ffffff" }}
             >
               Admin Panel
             </Button>
           )}
           {user ? (
             <>
-              <IconButton size="large" onClick={handleMenu} sx={{ color: "#1f2937" }}>
+              <IconButton size="large" onClick={handleMenu} sx={{ color: "#ffffff" }}>
                 <AccountCircle />
               </IconButton>
               <Menu
