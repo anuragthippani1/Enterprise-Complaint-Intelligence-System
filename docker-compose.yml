@@ -16,16 +16,17 @@ services:
       timeout: 5s
       retries: 5
     user: "1000:1000" # Use host user's UID:GID for permissions
+    networks:
+      - app-network
 
   backend:
     build: ./backend
     ports:
-      - "8888:8888"
+      - "8888:8888"   # FIXED (map host 8888 -> container 5000)
     environment:
-      - MONGO_URI=mongodb://root:example@mongodb:27017/?authSource=admin
-      - MONGO_URI_LOCAL=mongodb://localhost:27017
+      - MONGO_URI=mongodb://localhost:27017/complaint_system?authSource=admin
       - DOCKER_ENV=true
-      - JWT_SECRET_KEY=your-super-secret-key-change-in-production
+      - JWT_SECRET_KEY=accs_8xmP9$vL2@nQ5&hR7*jK3
     depends_on:
       mongodb:
         condition: service_healthy

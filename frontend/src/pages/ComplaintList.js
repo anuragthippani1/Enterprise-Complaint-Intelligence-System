@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Table,
@@ -35,6 +35,7 @@ import { saveAs } from "file-saver";
 
 export const ComplaintList = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, isAdmin } = useAuth();
   const [complaints, setComplaints] = useState([]);
   const [total, setTotal] = useState(0);
@@ -44,10 +45,28 @@ export const ComplaintList = () => {
   const [error, setError] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
+  const [sentiment, setSentiment] = useState("");
+  const [priority, setPriority] = useState("");
+  const [viewMode, setViewMode] = useState(""); // categories, sentiments, priorities
+
+  // Read URL parameters on component mount
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    const statusParam = searchParams.get("status");
+    const sentimentParam = searchParams.get("sentiment");
+    const priorityParam = searchParams.get("priority");
+    const viewParam = searchParams.get("view");
+    
+    if (categoryParam) setCategory(categoryParam);
+    if (statusParam) setStatus(statusParam);
+    if (sentimentParam) setSentiment(sentimentParam);
+    if (priorityParam) setPriority(priorityParam);
+    if (viewParam) setViewMode(viewParam);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchComplaints();
-  }, [page, rowsPerPage, category, status, user.token]);
+  }, [page, rowsPerPage, category, status, sentiment, priority, user.token]);
 
   const fetchComplaints = async () => {
     setLoading(true);
@@ -55,6 +74,8 @@ export const ComplaintList = () => {
       let url = `/api/complaints?page=${page + 1}&per_page=${rowsPerPage}`;
       if (category) url += `&category=${category}`;
       if (status) url += `&status=${status}`;
+      if (sentiment) url += `&sentiment=${sentiment}`;
+      if (priority) url += `&priority=${priority}`;
 
       const response = await fetch(url, {
         headers: {
@@ -94,6 +115,19 @@ export const ComplaintList = () => {
   const handleStatusChange = (event) => {
     setStatus(event.target.value);
     setPage(0);
+  };
+
+  // Group complaints by field
+  const groupComplaintsBy = (field) => {
+    const grouped = {};
+    complaints.forEach((complaint) => {
+      const key = complaint[field] || "unknown";
+      if (!grouped[key]) {
+        grouped[key] = [];
+      }
+      grouped[key].push(complaint);
+    });
+    return grouped;
   };
 
   const getStatusColor = (status) => {
@@ -185,7 +219,30 @@ export const ComplaintList = () => {
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} sm={6} md={6}>
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>Sentiment</InputLabel>
+            <Select value={sentiment} label="Sentiment" onChange={(e) => setSentiment(e.target.value)}>
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="negative">😡 Negative</MenuItem>
+              <MenuItem value="neutral">😐 Neutral</MenuItem>
+              <MenuItem value="positive">😊 Positive</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>Priority</InputLabel>
+            <Select value={priority} label="Priority" onChange={(e) => setPriority(e.target.value)}>
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="critical">🔴 Critical</MenuItem>
+              <MenuItem value="high">🟠 High</MenuItem>
+              <MenuItem value="medium">🟡 Medium</MenuItem>
+              <MenuItem value="low">🟢 Low</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12}>
           <Box
             sx={{
               display: "flex",
@@ -231,7 +288,129 @@ export const ComplaintList = () => {
         <Box display="flex" justifyContent="center" my={4}>
           <CircularProgress />
         </Box>
+      ) : viewMode === "sentiments" ? (
+        // Grouped by Sentiment
+        <Box>
+          {Object.entries(groupComplaintsBy("sentiment")).map(([sentiment, sentimentComplaints]) => (
+            <Paper key={sentiment} sx={{ mb: 3, p: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
+                <Chip 
+                  label={`${sentiment.charAt(0).toUpperCase() + sentiment.slice(1)} ${
+                    sentiment === "negative" ? "😡" : sentiment === "neutral" ? "😐" : "😊"
+                  }`}
+                  color={sentiment === "negative" ? "error" : sentiment === "positive" ? "success" : "warning"}
+                  sx={{ fontWeight: "bold" }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  ({sentimentComplaints.length} complaints)
+                </Typography>
+              </Typography>
+              {sentimentComplaints.map((complaint) => (
+                <Box key={complaint._id} sx={{ mb: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
+                  <Typography variant="body1" sx={{ mb: 1 }}>
+                    {complaint.text}
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
+                    <Chip label={complaint.category} size="small" color="primary" />
+                    <Chip label={complaint.status} size="small" color={getStatusColor(complaint.status)} />
+                    {complaint.priority && <Chip label={complaint.priority} size="small" variant="outlined" />}
+                    <Button size="small" variant="outlined" onClick={() => navigate(`/complaints/${complaint._id}`)}>
+                      View Details
+                    </Button>
+                  </Box>
+                </Box>
+              ))}
+            </Paper>
+          ))}
+        </Box>
+      ) : viewMode === "priorities" ? (
+        // Grouped by Priority
+        <Box>
+          {["critical", "high", "medium", "low"].map((priority) => {
+            const priorityComplaints = complaints.filter(c => c.priority === priority);
+            if (priorityComplaints.length === 0) return null;
+            return (
+              <Paper key={priority} sx={{ mb: 3, p: 2 }}>
+                <Typography variant="h6" sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
+                  <Chip 
+                    label={`${priority.charAt(0).toUpperCase() + priority.slice(1)} Priority`}
+                    color={priority === "critical" || priority === "high" ? "error" : priority === "medium" ? "warning" : "success"}
+                    sx={{ fontWeight: "bold" }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    ({priorityComplaints.length} complaints)
+                  </Typography>
+                </Typography>
+                {priorityComplaints.map((complaint) => (
+                  <Box key={complaint._id} sx={{ mb: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      {complaint.text}
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
+                      <Chip label={complaint.category} size="small" color="primary" />
+                      <Chip label={complaint.status} size="small" color={getStatusColor(complaint.status)} />
+                      {complaint.sentiment && (
+                        <Chip 
+                          label={`${complaint.sentiment} ${
+                            complaint.sentiment === "negative" ? "😡" : complaint.sentiment === "neutral" ? "😐" : "😊"
+                          }`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      )}
+                      <Button size="small" variant="outlined" onClick={() => navigate(`/complaints/${complaint._id}`)}>
+                        View Details
+                      </Button>
+                    </Box>
+                  </Box>
+                ))}
+              </Paper>
+            );
+          })}
+        </Box>
+      ) : viewMode === "categories" ? (
+        // Grouped by Category
+        <Box>
+          {Object.entries(groupComplaintsBy("category")).map(([category, categoryComplaints]) => (
+            <Paper key={category} sx={{ mb: 3, p: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
+                <Chip 
+                  label={category.charAt(0).toUpperCase() + category.slice(1)}
+                  color="primary"
+                  sx={{ fontWeight: "bold" }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  ({categoryComplaints.length} complaints)
+                </Typography>
+              </Typography>
+              {categoryComplaints.map((complaint) => (
+                <Box key={complaint._id} sx={{ mb: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
+                  <Typography variant="body1" sx={{ mb: 1 }}>
+                    {complaint.text}
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
+                    <Chip label={complaint.status} size="small" color={getStatusColor(complaint.status)} />
+                    {complaint.sentiment && (
+                      <Chip 
+                        label={`${complaint.sentiment} ${
+                          complaint.sentiment === "negative" ? "😡" : complaint.sentiment === "neutral" ? "😐" : "😊"
+                        }`}
+                        size="small"
+                        variant="outlined"
+                      />
+                    )}
+                    {complaint.priority && <Chip label={complaint.priority} size="small" variant="outlined" />}
+                    <Button size="small" variant="outlined" onClick={() => navigate(`/complaints/${complaint._id}`)}>
+                      View Details
+                    </Button>
+                  </Box>
+                </Box>
+              ))}
+            </Paper>
+          ))}
+        </Box>
       ) : (
+        // Regular Table View
         <TableContainer component={Paper}>
           <Table>
             <TableHead>

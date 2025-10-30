@@ -8,24 +8,47 @@ import {
   Typography,
   Box,
   Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
 } from "@mui/material";
 import axios from "axios";
+
+const categories = [
+  { value: "billing", label: "Billing" },
+  { value: "delivery", label: "Delivery" },
+  { value: "quality", label: "Quality" },
+  { value: "service", label: "Service" },
+  { value: "technical", label: "Technical" },
+];
 
 const ComplaintForm = () => {
   const navigate = useNavigate();
   const [complaint, setComplaint] = useState("");
+  const [category, setCategory] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    
+    if (!category) {
+      setError("Please select a category");
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
       await axios.post(
         "http://localhost:8888/api/complaints",
-        { text: complaint },
+        { 
+          text: complaint,
+          category: category  // Send the selected category
+        },
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -56,6 +79,27 @@ const ComplaintForm = () => {
             </Alert>
           )}
           <form onSubmit={handleSubmit}>
+            <FormControl fullWidth margin="normal" required sx={{ mb: 2 }}>
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={category}
+                label="Category"
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <MenuItem value="">
+                  <em>Select a category</em>
+                </MenuItem>
+                {categories.map((cat) => (
+                  <MenuItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </MenuItem>
+                ))}
+              </Select>
+              <FormHelperText>
+                Select the category that best describes your complaint
+              </FormHelperText>
+            </FormControl>
+            
             <TextField
               fullWidth
               label="Complaint Description"
@@ -68,6 +112,7 @@ const ComplaintForm = () => {
               placeholder="Please describe your complaint in detail..."
               sx={{ mb: 2 }}
             />
+            
             <Box sx={{ display: "flex", gap: 2 }}>
               <Button
                 type="submit"
